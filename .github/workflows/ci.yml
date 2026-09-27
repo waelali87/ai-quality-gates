@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install editable package
+        run: python -m pip install -e .
+      - name: Unit, lifecycle, and adversarial tests
+        run: python -m unittest discover -s tests -v
+      - name: Compile check
+        run: python -m compileall -q src
+      - name: Build wheel without isolated dependency download
+        run: python -m pip wheel . --no-deps --no-build-isolation -w dist
+      - name: Replace editable install with the built wheel
+        shell: bash
+        run: |
+          python -m pip uninstall -y ai-quality-gates
+          python -m pip install --no-deps dist/*.whl
+      - name: Installed-wheel CLI smoke test
+        run: aqg --version
+      - name: Strict validation of sample project using installed wheel
+        run: aqg validate --strict examples/sample-project
+      - name: Release-policy check of sample project using installed wheel
+        run: aqg release-check examples/sample-project
