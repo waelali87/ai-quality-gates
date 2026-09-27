@@ -47,7 +47,10 @@ jobs:
           test -f "$SRC/MANIFEST.sha256"
           (cd "$SRC" && sha256sum -c MANIFEST.sha256)
 
-          rsync -a --delete --exclude='.git/' "$SRC/" "$GITHUB_WORKSPACE/"
+          # The GitHub Actions token cannot create/update workflow files.
+          # Publish the audited source tree while preserving .github/workflows;
+          # the final CI workflow is written through the authenticated connector afterward.
+          rsync -a --delete --exclude='.git/' --exclude='.github/workflows/' "$SRC/" "$GITHUB_WORKSPACE/"
 
       - name: Commit reconstructed source
         shell: bash
