@@ -1,0 +1,61 @@
+name: Bootstrap RC2 source
+
+on:
+  push:
+    paths:
+      - ".github/workflows/bootstrap-rc2.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Reconstruct audited RC2 source
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            cat .bootstrap/part-00.txt
+            cat .bootstrap/part-01.txt
+            cat .bootstrap/part-02.txt
+            cat .bootstrap/part-03.txt
+            cat .bootstrap/rem-00.txt
+            cat .bootstrap/rem-01.txt
+            cat .bootstrap/rem-02.txt
+            cat .bootstrap/rem-03.txt
+            cat .bootstrap/tail-00.txt
+            cat .bootstrap/tail-01.txt
+            cat .bootstrap/tail-02.txt
+            cat .bootstrap/tail-03.txt
+            cat .bootstrap/tail-04.txt
+            cat .bootstrap/tail-05.txt
+            cat .bootstrap/tail-06.txt
+            cat .bootstrap/tail-07.txt
+            cat .bootstrap/tail-08.txt
+            cat .bootstrap/tail-09.txt
+          } | base64 --decode > /tmp/aqg-rc2.tar.gz
+
+          mkdir -p /tmp/aqg-rc2
+          tar -xzf /tmp/aqg-rc2.tar.gz -C /tmp/aqg-rc2
+          SRC=/tmp/aqg-rc2/ai-quality-gates-0.1.0rc2
+          test -f "$SRC/MANIFEST.sha256"
+          (cd "$SRC" && sha256sum -c MANIFEST.sha256)
+
+          rsync -a --delete --exclude='.git/' "$SRC/" "$GITHUB_WORKSPACE/"
+
+      - name: Commit reconstructed source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && exit 0
+          git commit -m "feat: publish AI Quality Gates v0.1.0rc2 source"
+          git push
