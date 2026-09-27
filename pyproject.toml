@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ai-quality-gates"
+version = "0.1.0rc2"
+description = "A deterministic, evidence-based quality gate framework for AI coding agents and complex AI-assisted work."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+  { name = "Wael Elgendy" }
+]
+keywords = ["ai", "quality", "agents", "coding-agents", "qa", "workflow", "prompt-engineering"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Software Development :: Quality Assurance",
+]
+
+[project.urls]
+Homepage = "https://github.com/waelali87/ai-quality-gates"
+Repository = "https://github.com/waelali87/ai-quality-gates"
+Issues = "https://github.com/waelali87/ai-quality-gates/issues"
+
+[project.scripts]
+aqg = "ai_quality_gates.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
