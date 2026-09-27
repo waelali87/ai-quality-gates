@@ -1,0 +1,29 @@
+name: Feature request
+description: Propose an improvement to AQG
+title: "[Feature]: "
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: Problem to solve
+      description: Describe the concrete user/control problem, not only the desired feature.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+    validations:
+      required: true
+  - type: textarea
+    id: invariants
+    attributes:
+      label: Effect on quality/closure invariants
+      description: Explain whether this changes evidence, sequencing, dependency, review, exception, or closure semantics.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Lower-complexity alternatives considered
+      description: AQG intentionally avoids complexity that does not strengthen governance.

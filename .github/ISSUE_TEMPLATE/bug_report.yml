@@ -1,0 +1,42 @@
+name: Bug report
+description: Report a reproducible defect in AQG
+title: "[Bug]: "
+body:
+  - type: input
+    id: version
+    attributes:
+      label: AQG version
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: input
+    id: python
+    attributes:
+      label: Python version / operating system
+      placeholder: "Python 3.13 / Ubuntu 24.04"
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction steps
+      description: Provide the smallest safe reproduction.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Include sanitized logs/output. Never include secrets or confidential data.
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact on AQG invariants
+      description: Could this cause false closure, skipped sequencing, invalid evidence acceptance, or dependency errors?

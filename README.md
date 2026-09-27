@@ -2,13 +2,17 @@
 
 **AI Quality Gates (AQG)** is a deterministic, evidence-based governance framework and zero-runtime-dependency Python CLI for AI-assisted software development and other complex execution work.
 
-It turns findings, recommendations, risks, defects, and missing requirements into dependency-aware quality gates, then prevents a gate from being treated as complete until its execution history, evidence, verification mappings, review requirements, and closure invariants are internally consistent.
+It converts findings, risks, defects, and requirements into dependency-aware gates, then separates three questions that are often confused:
 
-> **Core principle:** a confident statement is not evidence, and a checked box is not proof by itself.
+1. **Record integrity** — is the gate data structurally and logically consistent?
+2. **Governance compliance** — does the record satisfy policy such as mandatory review?
+3. **Release readiness** — are all release-blocking gates acceptably resolved?
+
+> **Core principle:** a confident statement is not evidence, and a structurally valid record is not automatically release-ready.
 
 ## Why AQG exists
 
-Long AI-assisted tasks fail in predictable ways: recommendations disappear, work jumps directly to “done,” dependencies are ignored, fixes are not re-tested, evidence is vague, and an agent can claim completion without a durable audit trail.
+Long AI-assisted tasks fail in predictable ways: recommendations disappear, work jumps directly to “done,” dependencies are ignored, fixes are not re-tested, reviewers approve stale states, evidence is vague, and CI can turn green while critical work remains unresolved.
 
 AQG makes the execution contract explicit:
 
@@ -27,35 +31,46 @@ Start only when READY
             ↓
 Analyze → Prepare → Execute → Test → Review → Fix → Re-test → Verify
             ↓
-Independent approval when required
+Independent approval of the final verified state when required
             ↓
-Close only after strict validation
+Close Gate
+            ↓
+Strict record validation
+            ↓
+Release-policy check
 ```
 
 ## What is enforced
 
 AQG validates more than final checkboxes:
 
-- canonical gate identity: filename and internal Gate ID must agree;
-- schema versioning;
-- unique Gate IDs and AC/EVID identifiers;
-- dependency existence and cycle detection;
+- canonical gate identity (`GATE-001`, `GATE-1000`, ...);
+- exactly one occurrence of each required section and governed metadata key;
+- section-aware parsing — AC, evidence, stages, and closure data only count in their canonical sections;
+- unique Gate, AC, and EVID identities;
+- dependency existence, canonical IDs, and cycle detection;
 - dependency-aware execution (`READY`, `BLOCKED`, `IN_PROGRESS`);
-- sequential stage completion: checked stages must form a contiguous prefix;
-- stage-history and work-log entries must match completed stages in order;
+- exactly nine execution stages in canonical order;
+- sequential stage completion with timestamped Stage History and Work Log entries;
+- temporal integrity: started time, stage events, approval, and closure cannot move backward;
 - non-placeholder problem, acceptance criteria, and evidence requirements before execution;
-- structured evidence references and optional strict local-file existence checks;
+- structured evidence references and strict local-file existence checks;
 - acceptance criteria mapped to collected PASS evidence;
-- independent approval when `Review-Required: YES`;
-- auditable `DEFERRED` and `WAIVED` exceptions that are **not** equivalent to closure;
+- policy-driven mandatory independent review for configured severities;
+- approval only after **Verify**, plus a SHA-256 fingerprint of the reviewed state;
+- automatic/manual detection of stale approval when reviewed content changes;
+- auditable `DEFERRED` and `WAIVED` exceptions that are not equivalent to closure;
 - controlled final closure through `aqg close`;
-- fail-closed validation for malformed or contradictory gate records.
+- separate `aqg release-check` enforcement for release-blocking severities;
+- fail-closed validation for malformed, duplicated, hidden, or contradictory gate records.
 
-## Trust model — what AQG proves and what it does not
+## Trust model
 
-AQG proves **process-state consistency** within the gate records. It can verify that required metadata exists, dependencies are respected, stages were recorded sequentially, evidence references are structurally valid, local evidence files exist in strict mode, criteria are mapped to PASS evidence, and closure invariants are satisfied.
+AQG proves **recorded process-state consistency**. It can verify structure, dependency state, stage order, evidence references, local evidence-file existence, AC-to-evidence mappings, approval freshness, policy constraints, and release-blocking status.
 
-AQG **does not independently prove that the underlying software, analysis, screenshot, external URL, test implementation, human review, or business decision is truthful or correct**. A malicious or careless user can fabricate artifacts. AQG therefore complements—not replaces—domain expertise, secure CI, test quality, code review, security review, audit procedures, and human accountability.
+AQG **does not prove that the underlying code, test implementation, screenshot, URL, human reviewer, or business assertion is truthful or correct**. A malicious or careless actor can fabricate artifacts. AQG complements—not replaces—domain expertise, secure CI, code review, security review, access controls, and human accountability.
+
+The audit trail is **Git-auditable, not tamper-proof**.
 
 ## Installation
 
@@ -71,14 +86,23 @@ The runtime package uses only the Python standard library.
 
 ```bash
 aqg init
-
 aqg new "Prevent duplicate payment posting" --severity critical
 ```
 
-Edit `.quality-gates/gates/GATE-001.md` and replace the DRAFT placeholders with real content. Then:
+`aqg init` creates:
+
+```text
+.quality-gates/
+├── README.md
+├── policy.toml
+└── gates/
+```
+
+Edit the generated gate and replace the Problem, `AC-*`, and `EVID-*` placeholders. Then:
 
 ```bash
 aqg status
+aqg next
 aqg start GATE-001 --note "Problem, criteria, and evidence plan reviewed"
 ```
 
@@ -87,35 +111,41 @@ Advance one stage at a time:
 ```bash
 aqg advance GATE-001 --note "Root cause confirmed"
 aqg advance GATE-001 --note "Implementation and rollback plan prepared"
-# ... continue through Review / Fix / Re-test ...
+# continue through Re-test
 ```
 
-Record objective evidence. `file:` references are verified to exist under the project root when strict validation or controlled evidence entry is used:
+Record objective evidence and map acceptance criteria:
 
 ```bash
 aqg add-evidence GATE-001 EVID-001 \
   --ref file:artifacts/regression-test.txt \
   --result PASS \
   --note "Idempotency regression suite passed"
-```
 
-Map acceptance criteria to evidence:
-
-```bash
 aqg satisfy GATE-001 AC-001 \
   --evidence EVID-001 \
   --note "The regression suite proves duplicate submissions create one posting"
 ```
 
-Record independent approval after the Review stage when required:
+Complete **Verify** first:
+
+```bash
+aqg verify GATE-001 --note "Evidence mapped to acceptance criteria and final material state verified"
+```
+
+`aqg verify` records `Verified-On` plus a SHA-256 `Verification-Fingerprint`. Any material mutation after Verify invalidates that verification; manual material edits are detected as stale.
+
+Then record independent approval of that final verified state when required:
 
 ```bash
 aqg approve GATE-001 \
   --reviewer "QA Reviewer" \
-  --note "Reviewed implementation, tests, and regression risk"
+  --note "Final verified state reviewed and accepted"
 ```
 
-Complete Verify, then close only through the controlled command:
+Any material content change after approval makes the approval stale. CLI mutations invalidate it explicitly; manual changes are detected by the approval fingerprint.
+
+Close only through the controlled command:
 
 ```bash
 aqg close GATE-001 \
@@ -123,56 +153,73 @@ aqg close GATE-001 \
   --note "All closure invariants satisfied"
 ```
 
-Finally:
+Finally run both checks:
 
 ```bash
 aqg validate --strict
+aqg release-check
 ```
 
-## Lifecycle states
+`validate --strict` answers **“are the records valid?”**. `release-check` answers **“may this project release under policy?”**.
 
-AQG stores formal statuses and derives operational states.
+## Policy
+
+The default `.quality-gates/policy.toml` is:
+
+```toml
+[release]
+blocking_severities = ["critical", "high"]
+allow_waived_blocking = false
+allow_deferred_blocking = false
+
+[review]
+required_severities = ["critical", "high"]
+```
+
+A Critical or High gate therefore cannot disable review through `--review-required no` unless the repository owner explicitly changes policy. A valid Critical/High DRAFT, OPEN, DEFERRED, or WAIVED gate still blocks `release-check` under the default policy.
+
+## Formal and operational states
 
 Formal statuses:
 
-- `DRAFT` — gate definition is being prepared;
-- `OPEN` — execution has started;
+- `DRAFT` — definition/preparation;
+- `OPEN` — execution started;
 - `CLOSED` — verified closure;
-- `DEFERRED` — explicitly postponed with reason/owner/date;
-- `WAIVED` — explicitly waived with reason/owner/date; **not** verified closure.
+- `DEFERRED` — explicitly postponed;
+- `WAIVED` — explicitly waived, but not verified closure.
 
 Operational states shown by `aqg status`:
 
-- `DRAFT` — not yet ready;
+- `DRAFT` — not ready;
 - `READY` — DRAFT is complete and prerequisites are closed;
-- `BLOCKED` — at least one dependency is not closed;
-- `IN_PROGRESS` — OPEN and executing;
+- `BLOCKED` — dependency not closed;
+- `IN_PROGRESS` — OPEN;
 - `CLOSED`, `DEFERRED`, `WAIVED`.
 
-Use `aqg next` to select the highest-priority executable gate while respecting dependencies.
+`aqg next` refuses to schedule work from an invalid workspace.
 
 ## Evidence contract
 
-Required evidence is declared with stable IDs:
+Required evidence:
 
 ```markdown
 - [ ] EVID-001 | type=test | A reproducible regression test passes.
 ```
 
-Collected evidence uses a structured record:
+Collected evidence:
 
 ```markdown
 - EVID-001 | type=test | ref=file:artifacts/test-results.txt | result=PASS | note=Regression suite passed
 ```
 
-Supported reference schemes:
+Supported references:
 
-- `file:relative/path` — project-relative artifact; strict mode requires it to exist and forbids path escape;
+- `file:relative/path` — strict mode requires the file to exist and rejects path escape;
 - `url:https://...` — absolute HTTP(S) URL;
 - `commit:<7-40 hex SHA>` — Git commit reference;
-- `manual:<description>` — permitted only for `type=approval`.
+- `manual:<description>` — only for `type=approval` evidence.
 
-Acceptance criteria must be explicitly mapped to collected PASS evidence:
+Acceptance mapping:
 
 ```markdown
 - AC-001 -> EVID-001 | Regression evidence proves idempotent posting.
@@ -186,8 +233,10 @@ aqg new "Title" [--severity ...] [--depends-on GATE-001] [--review-required yes|
 aqg status [path] [--json]
 aqg next [path] [--json]
 aqg validate [path] [--strict] [--json]
+aqg release-check [path] [--json]
 aqg start GATE-001 --note "..."
 aqg advance GATE-001 --note "..."
+aqg verify GATE-001 --note "..."
 aqg add-evidence GATE-001 EVID-001 --ref ... --result PASS --note "..."
 aqg satisfy GATE-001 AC-001 --evidence EVID-001 --note "..."
 aqg approve GATE-001 --reviewer "..." --note "..."
@@ -197,46 +246,55 @@ aqg waive GATE-001 --reason "..." --by "..."
 aqg resume GATE-001 --note "..."
 ```
 
+## Machine-readable JSON contract
+
+JSON outputs include `schema_version: 1`. `validate --json` always uses `valid`, while `release-check --json` always uses `release_ready`; both include `errors`. This shape is stable for Schema Version 1.
+
+## Governed-path safety
+
+AQG rejects symlinked `.quality-gates`, `gates/`, `policy.toml`, and gate records. Governed paths must resolve inside the project root.
+
 ## CI
 
-The repository tests Python 3.11, 3.12, and 3.13. For a consumer project, copy [`examples/consumer-workflow.yml`](examples/consumer-workflow.yml) into `.github/workflows/quality-gates.yml` and adapt installation as needed.
-
-The enforcement command is:
+The repository CI is configured for Python 3.11, 3.12, and 3.13. Consumer CI should run both:
 
 ```bash
 aqg validate --strict
+aqg release-check
 ```
 
-## Use with AI coding agents
+See [`examples/consumer-workflow.yml`](examples/consumer-workflow.yml). The example pins AQG to `v0.1.0`; high-assurance consumers can pin an exact commit SHA.
+
+## AI-agent usage
 
 Start with [`prompts/UNIVERSAL_AGENT_PROMPT.md`](prompts/UNIVERSAL_AGENT_PROMPT.md). Integration notes are included for ChatGPT/Codex, Claude Code, Cursor, and OpenCode.
 
-The `.quality-gates/` directory is the durable source of truth. The agent should use AQG commands for lifecycle transitions instead of manually marking a gate complete.
+The `.quality-gates/` directory is durable execution state. Agents should use AQG lifecycle commands rather than manually changing governed fields.
+
+## Concurrency model
+
+**v0.1 is single-writer.** Do not run concurrent AQG mutation commands against the same workspace. Writes are atomic where AQG replaces existing records, and new gate creation uses exclusive creation, but cross-process multi-writer locking is intentionally deferred.
 
 ## Repository layout
 
 ```text
 .
-├── src/ai_quality_gates/     # CLI and validation logic
-├── templates/                # Gate and findings templates
-├── prompts/                  # Agent operating prompts
-├── docs/                     # Specification, trust model, design decisions
-├── examples/                 # Lifecycle examples and consumer CI
-├── tests/                    # Unit + end-to-end tests
-└── .github/                  # CI and contribution templates
+├── src/ai_quality_gates/
+├── templates/
+├── prompts/
+├── docs/
+├── examples/
+├── tests/
+└── .github/
 ```
 
-## Security and sensitive evidence
+## Security
 
-Never commit secrets, tokens, passwords, personal data, production credentials, or confidential records into `.quality-gates/`. Prefer sanitized or redacted evidence artifacts. See [`SECURITY.md`](SECURITY.md).
+Never commit secrets, tokens, passwords, personal data, production credentials, or confidential records into `.quality-gates/`. Prefer sanitized evidence. See [`SECURITY.md`](SECURITY.md).
 
 ## Maturity
 
-`v0.1.0` is the initial public alpha. Its scope is intentionally narrow: deterministic Markdown gate records, dependency-aware lifecycle control, evidence contracts, strict validation, and a small standard-library CLI.
-
-## Contributing
-
-See [`CONTRIBUTING.md`](CONTRIBUTING.md).
+`0.1.0rc2` is the release candidate for the initial public `v0.1.0` alpha. It is intentionally CLI-first, Markdown-based, single-writer, and dependency-light.
 
 ## License
 

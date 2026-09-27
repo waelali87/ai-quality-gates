@@ -1,0 +1,7 @@
+[release]
+blocking_severities = ["critical", "high"]
+allow_waived_blocking = false
+allow_deferred_blocking = false
+
+[review]
+required_severities = ["critical", "high"]
