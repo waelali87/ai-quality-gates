@@ -1,46 +1,44 @@
-# Acceptance Report — v0.1.0 RC2
+# Acceptance Report — v0.1.0
 
-Date: 2026-09-27
+Date: 2026-09-28
 
-## Local verified results
+## Engineering acceptance
 
 - Test inventory: **67 test cases** after RC2 hardening.
-- All test cases have passed in local module/class/targeted runs on Python 3.13.5.
-- A single monolithic `unittest discover` invocation exceeds the interactive execution window in this audit environment because CLI lifecycle tests spawn many Python subprocesses; GitHub CI remains the authoritative uninterrupted full-discovery run.
-- Python compile check: PASS.
-- Sample project strict validation: PASS.
-- Sample project release-policy check: PASS.
-- Governed symlink/path escape controls: PASS.
-- Verification/approval/closure freshness controls: PASS.
-- Exception-readiness controls: PASS.
-- Fence-aware schema parsing: PASS.
-- Evidence refs with spaces: PASS.
-- Stable JSON contract tests: PASS.
-- Severity-first scheduler test: PASS.
-- POSIX file-mode preservation test: PASS.
-- Title/preamble guards: PASS.
-- Local strict-validation benchmark: ~0.085s/50 gates, ~0.189s/100, ~0.529s/200 in this environment.
+- Python compile check: **PASS**.
+- Sample project strict validation: **PASS**.
+- Sample project release-policy check: **PASS**.
+- Governed symlink/path-escape controls: **PASS**.
+- Verification / approval / closure freshness controls: **PASS**.
+- Exception-readiness controls: **PASS**.
+- Fence-aware schema parsing: **PASS**.
+- Evidence refs with spaces: **PASS**.
+- Stable JSON contract tests: **PASS**.
+- Severity-first scheduler test: **PASS**.
+- POSIX file-mode preservation test: **PASS**.
+- Title/preamble guards: **PASS**.
 
 ## Package acceptance
 
-Verified locally on Python 3.13.5:
+The accepted package flow verifies:
 
-1. `python -m compileall -q src` — **PASS**
-2. `python -m pip wheel . --no-deps --no-build-isolation -w dist` — **PASS**
-3. clean venv install of the built wheel with `--no-index --no-deps` — **PASS**
-4. installed-wheel `aqg --version` → `aqg 0.1.0rc2` — **PASS**
-5. installed-wheel `aqg validate --strict examples/sample-project` — **PASS**
-6. installed-wheel `aqg release-check examples/sample-project` — **PASS**
-7. secret/private-key/token pattern scan — **PASS** (no matches)
-8. email-like-string scan — **PASS** (no matches)
-9. internal `MANIFEST.sha256` — **PASS** (43 source-file entries verified after cleanup); external `SHA256SUMS` is generated for the final RC2 archive.
+1. `python -m compileall -q src`
+2. clean wheel build from the source tree
+3. replacement of the editable installation with the built wheel
+4. installed-wheel `aqg --version`
+5. installed-wheel `aqg validate --strict examples/sample-project`
+6. installed-wheel `aqg release-check examples/sample-project`
+7. source manifest integrity
+8. release-asset SHA-256 checksums
 
-## External CI still required
+## External CI verification
 
-The repository CI is configured for Python 3.11, 3.12, and 3.13 and now tests the built wheel. The final public `v0.1.0` tag remains blocked until the complete source tree is pushed and all three GitHub Actions matrix jobs are green.
+GitHub Actions run `36352179562` on the published RC2 baseline completed successfully across Python 3.11, 3.12, and 3.13. All matrix jobs passed full test discovery, compile check, clean wheel build, installed-wheel CLI smoke test, sample strict validation, and sample release-policy check.
+
+The final `v0.1.0` promotion commit is required to pass the same CI matrix before the automated release workflow publishes the tag and release assets.
 
 ## Decision
 
-**RC2 local engineering gates, package-install gates, and internal manifest verification: PASS. GitHub CI is the remaining external publication gate.**
+**RC2 engineering acceptance: PASS.**
 
-**Final public v0.1.0 tag: HOLD until GitHub Actions is green on the complete source commit.**
+**v0.1.0 promotion: APPROVED, conditional only on the same final-commit GitHub Actions matrix completing green. The repository release workflow publishes the final tag and assets only after that condition is met.**

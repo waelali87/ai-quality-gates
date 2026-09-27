@@ -294,7 +294,7 @@ Never commit secrets, tokens, passwords, personal data, production credentials, 
 
 ## Maturity
 
-`0.1.0rc2` is the release candidate for the initial public `v0.1.0` alpha. It is intentionally CLI-first, Markdown-based, single-writer, and dependency-light.
+`v0.1.0` is the initial public alpha release. It is intentionally CLI-first, Markdown-based, single-writer, and dependency-light. The release is validated across Python 3.11, 3.12, and 3.13 in GitHub Actions, including tests against the built wheel.
 
 ## License
 

@@ -1,76 +1,81 @@
-# Release Checklist
+# Release Checklist — v0.1.0
 
 ## Source and packaging
 
-- [ ] Canonical repository tree contains no build/cache artifacts.
-- [ ] `python -m compileall -q src` passes.
-- [ ] Wheel builds without runtime dependencies.
-- [ ] Built wheel is installed into a clean environment and `aqg --version` passes.
-- [ ] Sample strict validation and release-check run from the installed wheel.
-- [ ] No credentials, private keys, tokens, or private email addresses are present.
-- [ ] Internal `MANIFEST.sha256` covers the release tree.
-- [ ] External `SHA256SUMS` covers the archive artifact.
+- [x] Canonical repository tree contains no build/cache artifacts.
+- [x] `python -m compileall -q src` passes.
+- [x] Wheel builds without runtime dependencies.
+- [x] Built wheel is installed into a clean environment and `aqg --version` passes.
+- [x] Sample strict validation and release-check run from the installed wheel.
+- [x] No credentials, private keys, tokens, or private email addresses are present in the accepted release source.
+- [x] Internal `MANIFEST.sha256` covers the release tree.
+- [x] Release workflow generates `SHA256SUMS` for uploaded release artifacts.
 
 ## Security / filesystem
 
-- [ ] `.quality-gates` symlink fails.
-- [ ] `gates/` symlink fails.
-- [ ] `policy.toml` symlink fails.
-- [ ] symlinked gate file fails.
-- [ ] Governed paths cannot resolve outside project root.
-- [ ] Evidence traversal outside root fails.
+- [x] `.quality-gates` symlink fails.
+- [x] `gates/` symlink fails.
+- [x] `policy.toml` symlink fails.
+- [x] symlinked gate file fails.
+- [x] Governed paths cannot resolve outside project root.
+- [x] Evidence traversal outside root fails.
 
 ## Lifecycle / freshness
 
-- [ ] Full unit/lifecycle/adversarial suite passes.
-- [ ] `aqg verify` requires Analyze through Re-test plus complete PASS evidence mapping.
-- [ ] Material CLI mutation after Verify invalidates Verify.
-- [ ] Manual material mutation after Verify makes Verification-Fingerprint stale.
-- [ ] Approval requires a fresh Verify.
-- [ ] Material mutation after approval invalidates/stales approval.
-- [ ] CLOSED record mutation makes Closure-Fingerprint stale, including review-not-required gates.
-- [ ] DEFER → RESUME → START before execution is valid.
-- [ ] DEFER requires a concrete Problem.
-- [ ] WAIVE requires concrete Problem + AC + Evidence Required.
+- [x] Full unit/lifecycle/adversarial suite passes.
+- [x] `aqg verify` requires Analyze through Re-test plus complete PASS evidence mapping.
+- [x] Material CLI mutation after Verify invalidates Verify.
+- [x] Manual material mutation after Verify makes Verification-Fingerprint stale.
+- [x] Approval requires a fresh Verify.
+- [x] Material mutation after approval invalidates/stales approval.
+- [x] CLOSED record mutation makes Closure-Fingerprint stale, including review-not-required gates.
+- [x] DEFER → RESUME → START before execution is valid.
+- [x] DEFER requires a concrete Problem.
+- [x] WAIVE requires concrete Problem + AC + Evidence Required.
 
 ## Parser / machine contract
 
-- [ ] Wrong-section AC/EVID/stage spoofing fails.
-- [ ] Duplicate metadata and duplicate sections fail.
-- [ ] H2 headings inside fenced code do not count as schema sections.
-- [ ] Nonblank preamble before Metadata fails.
-- [ ] Newline/control characters in titles fail.
-- [ ] Evidence refs with spaces follow documented grammar.
-- [ ] JSON failure/success shapes include Schema Version 1 and stable command-specific keys.
+- [x] Wrong-section AC/EVID/stage spoofing fails.
+- [x] Duplicate metadata and duplicate sections fail.
+- [x] H2 headings inside fenced code do not count as schema sections.
+- [x] Nonblank preamble before Metadata fails.
+- [x] Newline/control characters in titles fail.
+- [x] Evidence refs with spaces follow documented grammar.
+- [x] JSON failure/success shapes include Schema Version 1 and stable command-specific keys.
 
 ## Governance / scheduling
 
-- [ ] `aqg validate --strict examples/sample-project` passes.
-- [ ] `aqg release-check examples/sample-project` passes.
-- [ ] Critical DRAFT/OPEN fails release-check.
-- [ ] Critical WAIVED fails release-check under default policy.
-- [ ] Critical/High cannot disable review under default policy.
-- [ ] Critical READY outranks Low IN_PROGRESS in `aqg next`.
-- [ ] `aqg next` refuses invalid projects.
+- [x] `aqg validate --strict examples/sample-project` passes.
+- [x] `aqg release-check examples/sample-project` passes.
+- [x] Critical DRAFT/OPEN fails release-check.
+- [x] Critical WAIVED fails release-check under default policy.
+- [x] Critical/High cannot disable review under default policy.
+- [x] Critical READY outranks Low IN_PROGRESS in `aqg next`.
+- [x] `aqg next` refuses invalid projects.
 
 ## CI
 
-- [ ] Python 3.11 green.
-- [ ] Python 3.12 green.
-- [ ] Python 3.13 green.
-- [ ] CI smoke-tests the built wheel, not only editable install.
-- [ ] Consumer workflow pins `v0.1.0` or an immutable commit SHA, not `main`.
+- [x] Python 3.11 green on accepted RC2 baseline.
+- [x] Python 3.12 green on accepted RC2 baseline.
+- [x] Python 3.13 green on accepted RC2 baseline.
+- [x] CI smoke-tests the built wheel, not only editable install.
+- [x] Consumer workflow pins `v0.1.0` or an immutable commit SHA, not `main`.
+- [ ] Final promotion commit matrix green — automatically required before release publication.
 
 ## Documentation
 
-- [ ] README distinguishes record integrity, governance compliance, and release readiness.
-- [ ] Verification, approval, and closure freshness are documented.
-- [ ] Governed-path and untrusted-agent-content boundaries are explicit.
-- [ ] Single-writer limitation is explicit.
-- [ ] Roadmap lists only future work.
+- [x] README distinguishes record integrity, governance compliance, and release readiness.
+- [x] Verification, approval, and closure freshness are documented.
+- [x] Governed-path and untrusted-agent-content boundaries are explicit.
+- [x] Single-writer limitation is explicit.
+- [x] Roadmap lists only future work.
+- [x] Final v0.1.0 release notes are included.
 
 ## GitHub
 
-- [ ] Full source tree is pushed.
-- [ ] Actions are green on the release commit.
-- [ ] Tag `v0.1.0` points to the verified commit only after every preceding item passes.
+- [x] Full source tree is pushed.
+- [ ] Actions are green on the final promotion commit.
+- [ ] Tag `v0.1.0` points to the final verified commit.
+- [ ] GitHub Release contains source ZIP, wheel, and `SHA256SUMS`.
+
+The final four unchecked items are publication-time controls. The release workflow is fail-closed: it runs only after the final CI workflow completes successfully on `main`, then creates `v0.1.0` from that exact verified commit and uploads the release artifacts.

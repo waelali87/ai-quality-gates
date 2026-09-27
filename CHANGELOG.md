@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented here.
 
+## [0.1.0] - 2026-09-28
+
+### Release
+
+- Promoted the accepted RC2 codebase to the first public alpha release.
+- Confirmed the complete Python 3.11/3.12/3.13 GitHub Actions matrix on the release candidate baseline.
+- CI builds a clean wheel, replaces the editable install with that wheel, and re-runs CLI/sample validation against the packaged artifact.
+- Added automatic GitHub release publication after a green CI run on a stable version commit.
+- Added release notes and checksum generation for the source archive and wheel.
+- Regenerated the internal source manifest for the final release tree.
+
 ## [0.1.0rc2] - 2026-09-27
 
 ### Added

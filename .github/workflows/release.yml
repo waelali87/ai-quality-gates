@@ -1,0 +1,104 @@
+name: Publish stable release
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Resolve stable version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          SHA='${{ github.event.workflow_run.head_sha }}'
+          REMOTE_MAIN=$(git ls-remote origin refs/heads/main | cut -f1)
+          if [ "$SHA" != "$REMOTE_MAIN" ]; then
+              echo "CI run is not for the current main tip; publication skipped."
+              echo "publish=false" >> "$GITHUB_OUTPUT"
+              exit 0
+          fi
+          VERSION=$(python - <<'PY'
+          import tomllib
+          with open('pyproject.toml', 'rb') as fh:
+              print(tomllib.load(fh)['project']['version'])
+          PY
+          )
+          case "$VERSION" in
+            *a*|*b*|*rc*|*.dev*|*+*)
+              echo "Stable release publishing skipped for pre/dev version: $VERSION"
+              echo "publish=false" >> "$GITHUB_OUTPUT"
+              exit 0
+              ;;
+          esac
+          TAG="v${VERSION}"
+          if git ls-remote --exit-code --tags origin "refs/tags/${TAG}" >/dev/null 2>&1; then
+              echo "Tag ${TAG} already exists; publication is idempotently skipped."
+              echo "publish=false" >> "$GITHUB_OUTPUT"
+              exit 0
+          fi
+          echo "publish=true" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare build tooling
+        if: steps.version.outputs.publish == 'true'
+        run: python -m pip install --upgrade pip "setuptools>=68" wheel
+
+      - name: Verify source manifest
+        if: steps.version.outputs.publish == 'true'
+        run: sha256sum -c MANIFEST.sha256
+
+      - name: Build release artifacts
+        if: steps.version.outputs.publish == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION='${{ steps.version.outputs.version }}'
+          SHA='${{ github.event.workflow_run.head_sha }}'
+          rm -rf build dist src/*.egg-info release-assets
+          mkdir -p release-assets
+          python -m pip wheel . --no-deps --no-build-isolation -w dist
+          cp dist/*.whl release-assets/
+          git archive --format=zip --prefix="ai-quality-gates-${VERSION}/" \
+            -o "release-assets/ai-quality-gates-${VERSION}-source.zip" "$SHA"
+          (cd release-assets && sha256sum *.whl *.zip > SHA256SUMS)
+
+      - name: Publish GitHub release
+        if: steps.version.outputs.publish == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION='${{ steps.version.outputs.version }}'
+          TAG='${{ steps.version.outputs.tag }}'
+          SHA='${{ github.event.workflow_run.head_sha }}'
+          NOTES="docs/RELEASE_NOTES_v${VERSION}.md"
+          if [ ! -f "$NOTES" ]; then
+            printf '# AI Quality Gates %s\n\nStable release from verified commit `%s`.\n' "$TAG" "$SHA" > /tmp/release-notes.md
+            NOTES=/tmp/release-notes.md
+          fi
+          gh release create "$TAG" \
+            --target "$SHA" \
+            --title "AI Quality Gates ${TAG}" \
+            --notes-file "$NOTES" \
+            release-assets/*
