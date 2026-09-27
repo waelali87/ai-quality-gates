@@ -39,12 +39,12 @@ This report converts the final RC1 review recommendations into sequential execut
 - **Tests:** post-close manual edit to no-review gate causes stale-closure failure.
 - **Verify:** PASS.
 
-## GATE-R6 — Test the Artifact We Ship — HIGH — CLOSED LOCALLY / EXTERNAL MATRIX PENDING
+## GATE-R6 — Test the Artifact We Ship — HIGH — CLOSED
 
 - **Problem:** CI built a wheel but smoke-tested the editable install.
 - **Execute:** CI now uninstalls editable AQG, installs `dist/*.whl`, then runs CLI/sample strict validation/release-check from the wheel on Python 3.11/3.12/3.13.
 - **Local test:** wheel build and clean-wheel install are executed in the release acceptance sequence.
-- **External dependency:** GitHub Actions matrix can only be verified after full source push.
+- **External verification:** GitHub Actions run `36352179562` passed on Python 3.11, 3.12, and 3.13, including installed-wheel smoke/strict/release checks.
 
 ## GATE-R7 — Fence-aware Markdown Scanner — MEDIUM — CLOSED
 
@@ -88,12 +88,12 @@ This report converts the final RC1 review recommendations into sequential execut
 - **Tests:** newline title rejected without file creation; nonblank preamble fails validation.
 - **Verify:** PASS.
 
-## GATE-R13 — Release Engineering / Maintainability — LOW/MEDIUM — CLOSED LOCALLY
+## GATE-R13 — Release Engineering / Maintainability — LOW/MEDIUM — CLOSED
 
 - **Problem:** test helpers were coupled, validation repeatedly reparsed gates, archive conventions were weak, and release evidence needed refresh.
 - **Execute:** extracted shared test helpers; validation reuses parsed gate summaries; sample project regenerated through the controlled lifecycle; docs/schema/checklists updated; versioned RC2 archive + internal manifest/external archive checksum are generated at packaging time.
 - **Performance verification:** local strict validation benchmark: ~0.085 s / 50 gates, ~0.189 s / 100 gates, ~0.529 s / 200 gates on the audit environment.
-- **Verify:** compile/sample/package checks PASS; external GitHub CI remains the final publication dependency.
+- **Verify:** compile/sample/package checks PASS; final GitHub Python 3.11–3.13 CI matrix PASS.
 
 ## Sequential gate status
 
@@ -104,15 +104,15 @@ This report converts the final RC1 review recommendations into sequential execut
 | GATE-R3 | High | CLOSED |
 | GATE-R4 | High | CLOSED |
 | GATE-R5 | High | CLOSED |
-| GATE-R6 | High | CLOSED LOCALLY — GitHub matrix pending |
+| GATE-R6 | High | CLOSED |
 | GATE-R7 | Medium | CLOSED |
 | GATE-R8 | Medium | CLOSED |
 | GATE-R9 | Medium | CLOSED |
 | GATE-R10 | Medium | CLOSED |
 | GATE-R11 | Medium | CLOSED |
 | GATE-R12 | Medium | CLOSED |
-| GATE-R13 | Low/Medium | CLOSED LOCALLY — GitHub publication check pending |
+| GATE-R13 | Low/Medium | CLOSED |
 
 ## Release decision
 
-All code/documentation recommendations from the RC1 review have been implemented locally. The only remaining non-local acceptance gate is the GitHub Actions matrix on Python 3.11/3.12/3.13 after pushing the complete RC2 source tree. Do not create the final `v0.1.0` tag until that matrix is green.
+All code/documentation recommendations from the RC1 review have been implemented and verified. The complete RC2 source is published, and GitHub Actions run `36352179562` is green across Python 3.11/3.12/3.13. RC2 is accepted as the release candidate; promotion to final `v0.1.0` is a separate version/tag step.
